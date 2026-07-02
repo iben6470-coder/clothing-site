@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Fashion Store</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+
+<!-- TOAST MESSAGE -->
+
+<!-- HEADER -->
+
+<header>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">  
+
+<div class="mobile-left">
+
+<span class="menu-icon" onclick="toggleMenu()">☰</span>
+
+
+
+
+</div>
+
+
+<h1 class="logo">Fashion Store</h1>
+
+
+<div class="mobile-right">
+
+<a href="account.html"><i class="fa-regular fa-user"></i></a>
+
+<a href="cart.html" class="cart-icon">
+<i class="fa-solid fa-bag-shopping"></i>
+<span id="cartCount">0</span>
+</a>
+
+</div>
+
+
+<nav id="navMenu">
+
+<a href="index.html">Home</a>
+<a href="tshirts.html">T-Shirts</a>
+<a href="jeans.html">Jeans</a>
+<a href="jackets.html">Jackets</a>
+<a href="shoes.html">Shoes</a>
+<a href="support.html">Support</a>
+<a href="admin.html">Admin</a>
+
+</nav>
+
+</header>
+
+
+
+<!-- SEARCH PANEL -->
+
+<div class="search-panel" id="searchPanel">
+
+<i class="fa-solid fa-magnifying-glass search-icon"></i>
+
+<input type="text" id="searchInput" placeholder="Search products..." onkeydown="searchProduct(event)">
+
+<button onclick="closeSearch()">✕</button>
+
+</div>
+
+</div>
+
+
+
+<!-- HERO -->
+
+<section class="hero">
+
+<h2>Modern Street Fashion</h2>
+
+<p>Premium streetwear essentials for everyday city style.</p>
+
+<a href="tshirts.html" class="shop-btn">Shop Now</a>
+
+</section>
+
+
+
+<!-- CATEGORIES -->
+
+<section class="products">
+
+<h2>Popular Products</h2>
+
+<p>Shop clean oversized pieces, denim, outerwear, and sneakers.</p>
+
+
+<div class="product-container">
+
+
+<div class="product">
+
+<img src="image/oversize-urban-black.jpg" alt="Fashion Store product">
+
+<h3>Urban T-Shirts</h3>
+
+<a href="tshirts.html">
+
+<button>View Collection</button>
+
+</a>
+
+</div>
+
+
+
+<div class="product">
+
+<img src="image/oversize-urban-jeans-blue.jpg" alt="Fashion Store product">
+
+<h3>Urban Jeans</h3>
+
+<a href="jeans.html">
+
+<button>View Collection</button>
+
+</a>
+
+</div>
+
+
+
+<div class="product">
+
+<img src="image/oversize-urban-jacket-black.jpg" alt="Fashion Store product">
+
+<h3>Urban Jackets</h3>
+
+<a href="jackets.html">
+
+<button>View Collection</button>
+
+</a>
+
+</div>
+
+
+
+<div class="product">
+
+<img src="image/oversize-urban-shoes.jpg" alt="Fashion Store product">
+
+<h3>Urban Shoes</h3>
+
+<a href="shoes.html">
+
+<button>View Collection</button>
+
+</a>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- WHY CHOOSE -->
+
+<section class="features">
+
+<h2>Why Choose Our Store</h2>
+
+<div class="features-container">
+
+
+<div class="feature-box">
+
+<h3>Fast Delivery</h3>
+
+<p>We deliver quickly anywhere in Morocco.</p>
+
+</div>
+
+
+<div class="feature-box">
+
+<h3>High Quality</h3>
+
+<p>Premium quality streetwear.</p>
+
+</div>
+
+
+<div class="feature-box">
+
+<h3>Best Prices</h3>
+
+<p>Affordable fashion with great prices.</p>
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+<!-- FOOTER -->
+
+<footer>
+
+<p>© 2026 Fashion Store</p>
+
+</footer>
+
+
+
+<script src="script.js"></script>
+
+
+</body>
+</html>

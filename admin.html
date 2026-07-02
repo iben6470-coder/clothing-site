@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | Fashion Store</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="admin-page">
+<header>
+<nav id="navMenu">
+<a href="index.html">Home</a>
+<a href="tshirts.html">T-Shirts</a>
+<a href="jeans.html">Jeans</a>
+<a href="jackets.html">Jackets</a>
+<a href="shoes.html">Shoes</a>
+<a href="support.html">Support</a>
+<a href="admin.html">Admin</a>
+</nav>
+<h1 class="logo">Fashion Store</h1>
+<div class="header-icons">
+<a href="cart.html" class="cart-icon">
+<i class="fa-solid fa-bag-shopping"></i>
+<span id="cartCount">0</span>
+</a>
+</div>
+</header>
+
+<main class="admin-shell">
+<section class="admin-card" id="adminLogin">
+<h2>Admin Login</h2>
+<p>Login to add products and pictures manually.</p>
+<form id="adminLoginForm">
+<input type="text" id="adminUsername" placeholder="Username" autocomplete="username" required>
+<input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" required>
+<button type="submit">Login</button>
+</form>
+<p class="admin-hint">Username: admin | Password: admin123</p>
+<p class="admin-hint" id="adminStorageMode"></p>
+<p class="admin-status" id="adminLoginStatus"></p>
+</section>
+
+<section class="admin-dashboard" id="adminDashboard" hidden>
+<div class="admin-topbar">
+<div>
+<h2>Product Admin</h2>
+<p>Add product name, price, category, and picture.</p>
+</div>
+<button type="button" class="secondary-btn" id="adminLogoutBtn">Logout</button>
+</div>
+
+<div class="admin-grid">
+<form class="admin-form" id="adminProductForm">
+<label>Product name
+<input type="text" id="productName" placeholder="Oversize Urban T-Shirt" required>
+</label>
+<label>Price MAD
+<input type="number" id="productPrice" placeholder="250" min="1" required>
+</label>
+<label>Category
+<select id="productCategory" required>
+<option value="tshirts">T-Shirts</option>
+<option value="jeans">Jeans</option>
+<option value="jackets">Jackets</option>
+<option value="shoes">Shoes</option>
+</select>
+</label>
+<label>Product picture
+<input type="file" id="productImage" accept="image/*" required>
+</label>
+<img id="adminImagePreview" class="admin-preview" alt="Product preview" hidden>
+<button type="submit">Add Product</button>
+<p class="admin-status" id="adminProductStatus"></p>
+</form>
+
+<div class="admin-list-panel">
+<h3>Added Products</h3>
+<div id="adminProductList" class="admin-product-list"></div>
+</div>
+</div>
+</section>
+</main>
+
+<footer>
+<p>© 2026 Fashion Store</p>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
