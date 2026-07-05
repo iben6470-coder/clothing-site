@@ -7,87 +7,81 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="admin-page">
 <header>
 <nav id="navMenu">
 <a href="index.html">Home</a>
-<a href="tshirts.html">T-Shirts</a>
-<a href="jeans.html">Jeans</a>
-<a href="jackets.html">Jackets</a>
-<a href="shoes.html">Shoes</a>
+<a href="index.html#shop">Shop</a>
+<a href="cart.html">Cart</a>
 <a href="support.html">Support</a>
 <a href="admin.html">Admin</a>
 </nav>
 <h1 class="logo">Fashion Store</h1>
-<div class="header-icons">
-<a href="cart.html" class="cart-icon">
-<i class="fa-solid fa-bag-shopping"></i>
-<span id="cartCount">0</span>
-</a>
-</div>
+<div class="header-icons"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
 <main class="admin-shell">
 <section class="admin-card" id="adminLogin">
 <h2>Admin Login</h2>
-<p>Login to add products and pictures manually.</p>
+<p>Manage categories, products, images, sizes, prices, and stock.</p>
 <form id="adminLoginForm">
 <input type="text" id="adminUsername" placeholder="Username" autocomplete="username" required>
 <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" required>
 <button type="submit">Login</button>
 </form>
-<p class="admin-hint">Username: admin | Password: admin123</p>
-<p class="admin-hint" id="adminStorageMode"></p>
 <p class="admin-status" id="adminLoginStatus"></p>
 </section>
 
 <section class="admin-dashboard" id="adminDashboard" hidden>
 <div class="admin-topbar">
-<div>
-<h2>Product Admin</h2>
-<p>Add product name, price, category, and picture.</p>
-</div>
+<div><h2>Store Admin</h2><p>Everything customers see is controlled here.</p></div>
 <button type="button" class="secondary-btn" id="adminLogoutBtn">Logout</button>
 </div>
 
+<div class="admin-tabs">
+<button class="admin-tab active" type="button" data-panel="categoriesPanel">Categories</button>
+<button class="admin-tab" type="button" data-panel="productsPanel">Products</button>
+</div>
+
+<div class="admin-panel active" id="categoriesPanel">
+<div class="admin-grid">
+<form class="admin-form" id="adminCategoryForm">
+<label>Category name<input type="text" id="categoryName" placeholder="T-Shirts" required></label>
+<label>Slug<input type="text" id="categorySlug" placeholder="t-shirts"></label>
+<label>Description<textarea id="categoryDescriptionInput" placeholder="Short category description"></textarea></label>
+<label>Category picture<input type="file" id="categoryImage" accept="image/*" required></label>
+<img id="categoryImagePreview" class="admin-preview" alt="Category preview" hidden>
+<button type="submit">Add Category</button>
+<p class="admin-status" id="adminCategoryStatus"></p>
+</form>
+<div class="admin-list-panel"><h3>Categories</h3><div id="adminCategoryList" class="admin-product-list"></div></div>
+</div>
+</div>
+
+<div class="admin-panel" id="productsPanel">
 <div class="admin-grid">
 <form class="admin-form" id="adminProductForm">
-<label>Product name
-<input type="text" id="productName" placeholder="Oversize Urban T-Shirt" required>
-</label>
-<label>Price MAD
-<input type="number" id="productPrice" placeholder="250" min="1" required>
-</label>
-<label>Category
-<select id="productCategory" required>
-<option value="tshirts">T-Shirts</option>
-<option value="jeans">Jeans</option>
-<option value="jackets">Jackets</option>
-<option value="shoes">Shoes</option>
-</select>
-</label>
-<label>Product picture
-<input type="file" id="productImage" accept="image/*" required>
-</label>
+<label>Product name<input type="text" id="productName" placeholder="Oversize Black Tee" required></label>
+<label>Category<select id="productCategory" required></select></label>
+<label>Price MAD<input type="number" id="productPrice" placeholder="250" min="1" required></label>
+<label>Stock<input type="number" id="productStock" placeholder="10" min="0" value="0"></label>
+<label>Sizes<input type="text" id="productSizes" placeholder="S, M, L, XL"></label>
+<label>Description<textarea id="productDescription" placeholder="Product details"></textarea></label>
+<label>Product picture<input type="file" id="productImage" accept="image/*" required></label>
 <img id="adminImagePreview" class="admin-preview" alt="Product preview" hidden>
 <button type="submit">Add Product</button>
 <p class="admin-status" id="adminProductStatus"></p>
 </form>
-
-<div class="admin-list-panel">
-<h3>Added Products</h3>
-<div id="adminProductList" class="admin-product-list"></div>
+<div class="admin-list-panel"><h3>Products</h3><div id="adminProductList" class="admin-product-list"></div></div>
 </div>
 </div>
 </section>
 </main>
 
-<footer>
-<p>© 2026 Fashion Store</p>
-</footer>
-<script src="script.js"></script>
+<footer><p>&copy; 2026 Fashion Store</p></footer>
+<script src="assets/js/script.js"></script>
 </body>
 </html>

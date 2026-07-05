@@ -1,4 +1,4 @@
-const { all } = require("./db");
+const { all } = require("../backend/db");
 
 (async () => {
   try {

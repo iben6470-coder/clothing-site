@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cart | Fashion Store</title>
+<title>Category | Fashion Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body>
+<body class="category-page">
 <header>
 <h1 class="logo">Fashion Store</h1>
 <nav id="navMenu">
@@ -19,34 +19,18 @@
 <a href="cart.html">Cart</a>
 <a href="support.html">Support</a>
 </nav>
-<div class="header-icons">
-<a href="cart.html" class="cart-icon">
-<i class="fa-solid fa-bag-shopping"></i>
-<span id="cartCount">0</span>
-</a>
-</div>
+<div class="header-icons"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
-<div class="back-btn">
-<a href="index.html">Back to Home</a>
-</div>
+<div class="back-btn"><a href="index.html#shop">Back to Categories</a></div>
 
 <section class="products">
-<h2>Your Cart</h2>
-<div id="cartItems"></div>
-<h3 id="totalPrice"></h3>
-
-<div class="checkout-form">
-<input type="text" id="customerName" placeholder="Full Name">
-<input type="text" id="customerPhone" placeholder="Phone Number">
-<input type="text" id="customerAddress" placeholder="Delivery Address">
-<button type="button" onclick="sendOrder()">Order via WhatsApp</button>
-</div>
+<h2 id="categoryTitle">Category</h2>
+<p id="categoryDescription">Explore available products in this collection.</p>
+<div class="product-container" id="categoryProducts"></div>
 </section>
 
-<footer>
-<p>&copy; 2026 Fashion Store</p>
-</footer>
+<footer><p>&copy; 2026 Fashion Store</p></footer>
 <script src="assets/js/script.js"></script>
 </body>
 </html>

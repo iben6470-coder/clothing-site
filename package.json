@@ -1,6 +1,8 @@
 {
   "scripts": {
-    "start": "node server.js"
+    "start": "node backend/server.js",
+    "check": "node --check backend/server.js && node --check assets/js/script.js",
+    "db:check": "node tests/check-db.js"
   },
   "dependencies": {
     "sqlite3": "^6.0.1"
