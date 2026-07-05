@@ -5,7 +5,7 @@ const { run, get, all, ready, DB_PATH } = require("./db");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = path.join(__dirname, "..");
-const UPLOAD_DIR = path.join(ROOT, "storage", "uploads");
+const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(ROOT, "storage", "uploads");
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 

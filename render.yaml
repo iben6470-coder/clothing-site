@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: clothing-site-api
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ADMIN_PASSWORD
+        value: admin123
+      - key: DB_PATH
+        value: /data/clothing_site.db
+      - key: UPLOAD_DIR
+        value: /data/uploads
+    disk:
+      name: clothing-site-data
+      mountPath: /data
+      sizeGB: 1

@@ -3,10 +3,12 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 const ADMIN_SESSION_KEY = "fashionAdminLoggedIn";
 const ADMIN_TOKEN_KEY = "fashionAdminToken";
 const API_BASE = (() => {
+  const configuredApi = String(window.FASHION_API_BASE || "").replace(/\/$/, "");
+  if(configuredApi){ return configuredApi; }
   const isLocalPreview = window.location.protocol === "file:" || (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000");
   return isLocalPreview ? "http://localhost:3000" : "";
 })();
-const USE_BROWSER_STORE = !["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.hostname !== "";
+const USE_BROWSER_STORE = !API_BASE && !["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.hostname !== "";
 const STORE_KEYS = {
   categories:"fashionLocalCategories",
   products:"fashionLocalProducts"
@@ -149,6 +151,7 @@ async function apiPost(url, data){
 }
 
 async function apiDelete(url){
+  if(USE_BROWSER_STORE){ return localDelete(url); }
   const response = await fetch(url, { method:"DELETE", headers:adminHeaders() });
   const result = await response.json().catch(() => ({}));
   if(!response.ok){ throw new Error(result.error || "Could not delete."); }
