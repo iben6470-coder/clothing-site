@@ -12,7 +12,7 @@
 </head>
 <body>
 <header>
-<h1 class="logo">Fashion Store</h1>
+<a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
 <nav id="navMenu">
 <a href="index.html">Home</a>
 <a href="index.html#shop">Shop</a>
@@ -40,7 +40,9 @@
 <input type="text" id="customerName" placeholder="Full Name">
 <input type="text" id="customerPhone" placeholder="Phone Number">
 <input type="text" id="customerAddress" placeholder="Delivery Address">
-<button type="button" onclick="sendOrder()">Order via WhatsApp</button>
+<input type="text" id="customerNotes" placeholder="Notes for delivery (optional)">
+<button type="button" onclick="sendOrder()">Place Order & Open WhatsApp</button>
+<p class="admin-status" id="orderStatus"></p>
 </div>
 </section>
 

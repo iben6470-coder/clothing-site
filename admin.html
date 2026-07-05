@@ -19,14 +19,14 @@
 <a href="support.html">Support</a>
 <a href="admin.html">Admin</a>
 </nav>
-<h1 class="logo">Fashion Store</h1>
+<a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
 <div class="header-icons"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
 <main class="admin-shell">
 <section class="admin-card" id="adminLogin">
 <h2>Admin Login</h2>
-<p>Manage categories, products, images, sizes, prices, and stock.</p>
+<p>Manage orders, categories, products, images, sizes, prices, and stock.</p>
 <form id="adminLoginForm">
 <input type="text" id="adminUsername" placeholder="Username" autocomplete="username" required>
 <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" required>
@@ -46,7 +46,14 @@
 <button class="admin-tab" type="button" data-panel="productsPanel">Products</button>
 </div>
 
-<div class="admin-panel active" id="categoriesPanel">
+<div class="admin-panel active" id="ordersPanel">
+<div class="admin-list-panel admin-orders-panel">
+<h3>Orders</h3>
+<p class="admin-panel-note">New client orders appear here. Use Message Client to open WhatsApp with a ready confirmation text.</p>
+<div id="adminOrderList" class="admin-order-list"></div>
+</div>
+</div>
+<div class="admin-panel" id="categoriesPanel">
 <div class="admin-grid">
 <form class="admin-form" id="adminCategoryForm">
 <label>Category name<input type="text" id="categoryName" placeholder="T-Shirts" required></label>

@@ -107,6 +107,7 @@ async function initializeDatabase(){
       customer_name TEXT,
       customer_phone TEXT,
       customer_address TEXT,
+      customer_notes TEXT,
       total_price REAL NOT NULL,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -114,6 +115,15 @@ async function initializeDatabase(){
     )
   `);
 
+
+  await addColumnIfMissing("orders", "user_id", "INTEGER");
+  await addColumnIfMissing("orders", "customer_name", "TEXT");
+  await addColumnIfMissing("orders", "customer_phone", "TEXT");
+  await addColumnIfMissing("orders", "customer_address", "TEXT");
+  await addColumnIfMissing("orders", "customer_notes", "TEXT");
+  await addColumnIfMissing("orders", "total_price", "REAL DEFAULT 0");
+  await addColumnIfMissing("orders", "status", "TEXT DEFAULT 'pending'");
+  await addColumnIfMissing("orders", "created_at", "DATETIME DEFAULT CURRENT_TIMESTAMP");
   await run(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,6 +138,13 @@ async function initializeDatabase(){
     )
   `);
 
+
+  await addColumnIfMissing("order_items", "order_id", "INTEGER");
+  await addColumnIfMissing("order_items", "product_id", "INTEGER");
+  await addColumnIfMissing("order_items", "product_name", "TEXT");
+  await addColumnIfMissing("order_items", "size", "TEXT");
+  await addColumnIfMissing("order_items", "quantity", "INTEGER DEFAULT 1");
+  await addColumnIfMissing("order_items", "price", "REAL DEFAULT 0");
   await run(`
     CREATE TABLE IF NOT EXISTS cart (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
