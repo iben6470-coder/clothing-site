@@ -3,9 +3,14 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 const ADMIN_SESSION_KEY = "fashionAdminLoggedIn";
 const ADMIN_TOKEN_KEY = "fashionAdminToken";
 const API_BASE = (() => {
-  const isStaticPreview = window.location.protocol === "file:" || (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000");
-  return isStaticPreview ? "http://localhost:3000" : "";
+  const isLocalPreview = window.location.protocol === "file:" || (["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.port !== "3000");
+  return isLocalPreview ? "http://localhost:3000" : "";
 })();
+const USE_BROWSER_STORE = !["localhost", "127.0.0.1"].includes(window.location.hostname) && window.location.hostname !== "";
+const STORE_KEYS = {
+  categories:"fashionLocalCategories",
+  products:"fashionLocalProducts"
+};
 const API = {
   categories:`${API_BASE}/api/categories`,
   products:`${API_BASE}/api/products`
@@ -13,7 +18,7 @@ const API = {
 
 function mediaUrl(path){
   if(!path){ return ""; }
-  if(path.startsWith("http") || path.startsWith("assets/")){ return path; }
+  if(path.startsWith("http") || path.startsWith("assets/") || path.startsWith("data:image/")){ return path; }
   return `${API_BASE}/${path}`;
 }
 
@@ -31,13 +36,108 @@ function adminHeaders(extra = {}){
   return Object.assign({}, extra, { "x-admin-auth":localStorage.getItem(ADMIN_TOKEN_KEY) || "" });
 }
 
+function slugify(value){
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function readStore(key){
+  try{ return JSON.parse(localStorage.getItem(key)) || []; }
+  catch(error){ return []; }
+}
+
+function writeStore(key, items){
+  try{ localStorage.setItem(key, JSON.stringify(items)); }
+  catch(error){ throw new Error("Image is too large for browser storage. Choose a smaller picture."); }
+}
+
+function localCategoryById(id){
+  return readStore(STORE_KEYS.categories).find((category) => String(category.id) === String(id));
+}
+
+function localGet(url){
+  const parsed = new URL(url, window.location.origin);
+  if(parsed.pathname.endsWith("/api/categories")){
+    return readStore(STORE_KEYS.categories).filter((category) => category.is_active !== 0).sort((a, b) => b.id - a.id);
+  }
+  if(parsed.pathname.endsWith("/api/products")){
+    const categorySlug = parsed.searchParams.get("category");
+    return readStore(STORE_KEYS.products)
+      .filter((product) => product.is_active !== 0)
+      .filter((product) => !categorySlug || product.category_slug === categorySlug || product.category === categorySlug)
+      .sort((a, b) => b.id - a.id);
+  }
+  return [];
+}
+
+function localPost(url, data){
+  const parsed = new URL(url, window.location.origin);
+  if(parsed.pathname.endsWith("/api/categories")){
+    const categories = readStore(STORE_KEYS.categories);
+    const name = String(data.name || "").trim();
+    const slug = slugify(data.slug || name);
+    if(!name || !slug){ throw new Error("Category name is required"); }
+    if(categories.some((category) => category.slug === slug)){ throw new Error("Category slug already exists"); }
+    const category = { id:Date.now(), name, slug, description:String(data.description || "").trim(), image:data.image || "", is_active:1, created_at:new Date().toISOString() };
+    writeStore(STORE_KEYS.categories, categories.concat(category));
+    return category;
+  }
+
+  if(parsed.pathname.endsWith("/api/products")){
+    const products = readStore(STORE_KEYS.products);
+    const category = localCategoryById(data.categoryId || data.category_id);
+    const price = Number(data.price);
+    const name = String(data.name || "").trim();
+    if(!name || !Number.isFinite(price) || price <= 0 || !category){ throw new Error("Name, price, and category are required"); }
+    if(!data.image){ throw new Error("Product image is required"); }
+    const product = {
+      id:Date.now(),
+      name,
+      category:category.slug,
+      category_id:category.id,
+      category_name:category.name,
+      category_slug:category.slug,
+      price,
+      description:String(data.description || "").trim(),
+      image:data.image,
+      sizes:JSON.stringify(parseSizes(data.sizes)),
+      stock:Number(data.stock || 0),
+      is_active:1,
+      created_at:new Date().toISOString()
+    };
+    writeStore(STORE_KEYS.products, products.concat(product));
+    return product;
+  }
+  throw new Error("Could not save.");
+}
+
+function localDelete(url){
+  const parsed = new URL(url, window.location.origin);
+  const id = parsed.pathname.split("/").pop();
+  if(parsed.pathname.includes("/api/categories/")){
+    writeStore(STORE_KEYS.categories, readStore(STORE_KEYS.categories).filter((category) => String(category.id) !== String(id)));
+    writeStore(STORE_KEYS.products, readStore(STORE_KEYS.products).filter((product) => String(product.category_id) !== String(id)));
+    return { ok:true };
+  }
+  if(parsed.pathname.includes("/api/products/")){
+    writeStore(STORE_KEYS.products, readStore(STORE_KEYS.products).filter((product) => String(product.id) !== String(id)));
+    return { ok:true };
+  }
+  throw new Error("Could not delete.");
+}
+
 async function apiGet(url){
+  if(USE_BROWSER_STORE){ return localGet(url); }
   const response = await fetch(url);
   if(!response.ok){ throw new Error("Could not load store data."); }
   return response.json();
 }
 
 async function apiPost(url, data){
+  if(USE_BROWSER_STORE){ return localPost(url, data); }
   const response = await fetch(url, {
     method:"POST",
     headers:adminHeaders({ "Content-Type":"application/json" }),
