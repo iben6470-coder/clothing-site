@@ -454,9 +454,10 @@ async function sendOrder(){
 function initAdminTabs(){
   document.querySelectorAll(".admin-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-      document.querySelectorAll(".admin-tab").forEach((item) => item.classList.remove("active"));
+      document.querySelectorAll(".admin-tab").forEach((item) => { item.classList.remove("active"); item.setAttribute("aria-selected", "false"); });
       document.querySelectorAll(".admin-panel").forEach((panel) => panel.classList.remove("active"));
       tab.classList.add("active");
+      tab.setAttribute("aria-selected", "true");
       document.getElementById(tab.dataset.panel).classList.add("active");
     });
   });

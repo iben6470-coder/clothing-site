@@ -41,9 +41,10 @@
 <button type="button" class="secondary-btn" id="adminLogoutBtn">Logout</button>
 </div>
 
-<div class="admin-tabs">
-<button class="admin-tab active" type="button" data-panel="categoriesPanel">Categories</button>
-<button class="admin-tab" type="button" data-panel="productsPanel">Products</button>
+<div class="admin-tabs" role="tablist" aria-label="Admin sections">
+<button class="admin-tab active" type="button" data-panel="ordersPanel" role="tab" aria-selected="true">Orders</button>
+<button class="admin-tab" type="button" data-panel="categoriesPanel" role="tab" aria-selected="false">Categories</button>
+<button class="admin-tab" type="button" data-panel="productsPanel" role="tab" aria-selected="false">Products</button>
 </div>
 
 <div class="admin-panel active" id="ordersPanel">
