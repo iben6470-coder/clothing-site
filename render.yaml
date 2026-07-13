@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: clothing-site-api
     env: node
@@ -11,12 +11,19 @@ services:
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_PASSWORD
-        value: admin123
+        sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://fashionstoreilyass.netlify.app
       - key: DB_PATH
         value: /data/clothing_site.db
       - key: UPLOAD_DIR
         value: /data/uploads
+      - key: CARD_PAYMENT_URL
+        sync: false
     disk:
       name: clothing-site-data
       mountPath: /data
       sizeGB: 1
+

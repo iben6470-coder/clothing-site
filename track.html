@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Category | Fashion Store</title>
+<title>Track Order | Fashion Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css?v=20260713-mobile-layer">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
-<body class="category-page">
+<body>
 <header>
 <div class="mobile-left"><span class="menu-icon" onclick="toggleMenu()">Menu</span></div>
 <a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
@@ -26,22 +26,23 @@
 <div class="mobile-right"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
-<div class="back-btn"><a href="index.html#shop">Back to Categories</a></div>
-
-<section class="products">
-<h2 id="categoryTitle">Category</h2>
-<p id="categoryDescription">Explore available products in this collection.</p>
-<div class="shop-toolbar" aria-label="Product controls">
-<input type="search" id="productSearch" placeholder="Search products">
-<select id="productSort" aria-label="Sort products">
-<option value="newest">Newest</option>
-<option value="price-asc">Price: Low to High</option>
-<option value="price-desc">Price: High to Low</option>
-<option value="stock">Most Stock</option>
-</select>
+<main class="track-shell">
+<section class="track-card">
+<div>
+<span class="track-kicker">Order status</span>
+<h1>Track your order</h1>
+<p>Enter your order number and phone to see your items, total, and current status.</p>
 </div>
-<div class="product-container" id="categoryProducts"></div>
+<form id="trackOrderForm" class="track-form">
+<input type="number" id="trackOrderId" placeholder="Order number" min="1" required>
+<input type="tel" id="trackPhone" placeholder="Phone number" autocomplete="tel" required>
+<button type="submit">Track Order</button>
+</form>
+<p class="admin-status" id="trackStatus"></p>
 </section>
+
+<section class="track-result" id="trackResult" hidden></section>
+</main>
 
 <footer class="site-footer">
 <p>&copy; 2026 Fashion Store</p>

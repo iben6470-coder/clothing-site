@@ -88,8 +88,11 @@ async function initializeDatabase(){
       price REAL NOT NULL,
       description TEXT,
       image TEXT,
+      images TEXT DEFAULT '[]',
       sizes TEXT DEFAULT '[]',
+      stock_by_size TEXT DEFAULT '{}',
       stock INTEGER DEFAULT 0,
+      audience TEXT DEFAULT 'unisex',
       is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (category_id) REFERENCES categories(id)
@@ -98,7 +101,10 @@ async function initializeDatabase(){
 
   await addColumnIfMissing("products", "category_id", "INTEGER");
   await addColumnIfMissing("products", "sizes", "TEXT DEFAULT '[]'");
+  await addColumnIfMissing("products", "stock_by_size", "TEXT DEFAULT '{}'");
+  await addColumnIfMissing("products", "images", "TEXT DEFAULT '[]'");
   await addColumnIfMissing("products", "is_active", "INTEGER DEFAULT 1");
+  await addColumnIfMissing("products", "audience", "TEXT DEFAULT 'unisex'");
 
   await run(`
     CREATE TABLE IF NOT EXISTS orders (
@@ -106,8 +112,12 @@ async function initializeDatabase(){
       user_id INTEGER,
       customer_name TEXT,
       customer_phone TEXT,
+      customer_city TEXT,
       customer_address TEXT,
       customer_notes TEXT,
+      payment_method TEXT DEFAULT 'cash',
+      payment_status TEXT DEFAULT 'unpaid',
+      payment_url TEXT,
       total_price REAL NOT NULL,
       status TEXT DEFAULT 'pending',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -119,8 +129,12 @@ async function initializeDatabase(){
   await addColumnIfMissing("orders", "user_id", "INTEGER");
   await addColumnIfMissing("orders", "customer_name", "TEXT");
   await addColumnIfMissing("orders", "customer_phone", "TEXT");
+  await addColumnIfMissing("orders", "customer_city", "TEXT");
   await addColumnIfMissing("orders", "customer_address", "TEXT");
   await addColumnIfMissing("orders", "customer_notes", "TEXT");
+  await addColumnIfMissing("orders", "payment_method", "TEXT DEFAULT 'cash'");
+  await addColumnIfMissing("orders", "payment_status", "TEXT DEFAULT 'unpaid'");
+  await addColumnIfMissing("orders", "payment_url", "TEXT");
   await addColumnIfMissing("orders", "total_price", "REAL DEFAULT 0");
   await addColumnIfMissing("orders", "status", "TEXT DEFAULT 'pending'");
   await addColumnIfMissing("orders", "created_at", "DATETIME DEFAULT CURRENT_TIMESTAMP");
@@ -146,6 +160,32 @@ async function initializeDatabase(){
   await addColumnIfMissing("order_items", "quantity", "INTEGER DEFAULT 1");
   await addColumnIfMissing("order_items", "price", "REAL DEFAULT 0");
   await run(`
+    CREATE TABLE IF NOT EXISTS product_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      order_id INTEGER NOT NULL,
+      customer_name TEXT,
+      customer_phone TEXT,
+      rating INTEGER DEFAULT 5,
+      comment TEXT,
+      image TEXT,
+      is_approved INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (product_id) REFERENCES products(id),
+      FOREIGN KEY (order_id) REFERENCES orders(id)
+    )
+  `);
+
+  await addColumnIfMissing("product_reviews", "product_id", "INTEGER");
+  await addColumnIfMissing("product_reviews", "order_id", "INTEGER");
+  await addColumnIfMissing("product_reviews", "customer_name", "TEXT");
+  await addColumnIfMissing("product_reviews", "customer_phone", "TEXT");
+  await addColumnIfMissing("product_reviews", "rating", "INTEGER DEFAULT 5");
+  await addColumnIfMissing("product_reviews", "comment", "TEXT");
+  await addColumnIfMissing("product_reviews", "image", "TEXT");
+  await addColumnIfMissing("product_reviews", "is_approved", "INTEGER DEFAULT 0");
+  await addColumnIfMissing("product_reviews", "created_at", "DATETIME DEFAULT CURRENT_TIMESTAMP");
+  await run(`
     CREATE TABLE IF NOT EXISTS cart (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
@@ -159,7 +199,7 @@ async function initializeDatabase(){
 
   await run(
     "INSERT OR IGNORE INTO users (username, email, password, role) VALUES (?, ?, ?, ?)",
-    ["admin", "admin@fashion-store.local", "admin123", "admin"]
+    ["admin", "admin@fashion-store.local", "env-managed", "admin"]
   );
 }
 

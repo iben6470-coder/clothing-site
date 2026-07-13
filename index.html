@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=20260713-mobile-layer">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
@@ -16,21 +16,48 @@
 <a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
 <nav id="navMenu">
 <a href="index.html">Home</a>
+<a href="men.html">Men</a>
+<a href="women.html">Women</a>
 <a href="index.html#shop">Shop</a>
 <a href="cart.html">Cart</a>
+<a href="track.html">Track Order</a>
 <a href="support.html">Support</a>
 </nav>
-<div class="mobile-right">
-<a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a>
-</div>
+<div class="mobile-right"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
 <section class="store-hero">
+<div class="hero-slideshow" aria-hidden="true">
+<picture>
+<source media="(max-width: 640px)" srcset="assets/images/hero-mobile/hero-mobile-1.jpg">
+<img class="hero-slide active" src="assets/images/hero-slides/hero-slide-1.png" alt="">
+</picture>
+<picture>
+<source media="(max-width: 640px)" srcset="assets/images/hero-mobile/hero-mobile-2.jpg">
+<img class="hero-slide" src="assets/images/hero-slides/hero-slide-2.png" alt="">
+</picture>
+<picture>
+<source media="(max-width: 640px)" srcset="assets/images/hero-mobile/hero-mobile-3.jpg">
+<img class="hero-slide" src="assets/images/hero-slides/hero-slide-3.png" alt="">
+</picture>
+<picture>
+<source media="(max-width: 640px)" srcset="assets/images/hero-mobile/hero-mobile-4.jpg">
+<img class="hero-slide" src="assets/images/hero-slides/hero-slide-4.png" alt="">
+</picture>
+<picture>
+<source media="(max-width: 640px)" srcset="assets/images/hero-mobile/hero-mobile-5.jpg">
+<img class="hero-slide" src="assets/images/mens-editorial-campaign-hero.png" alt="">
+</picture>
+</div>
 <div class="store-hero-content">
-<span class="eyebrow">New Season Essentials</span>
-<h2>Streetwear made for everyday movement.</h2>
-<p>Discover clean fits, sharp details, and pieces selected for city life.</p>
-<a href="#shop" class="shop-btn">Browse Categories</a>
+<span class="eyebrow">New Collection</span>
+<h2>Shop Men and Women</h2>
+<p>Editorial streetwear drops, clean silhouettes, and sharp everyday pieces for every fit.</p>
+<div class="hero-actions">
+<a href="men.html" class="shop-btn">Shop Men</a>
+<a href="women.html" class="shop-btn secondary-hero-btn">Shop Women</a>
+<a href="#products" class="shop-btn ghost-hero-btn">Shop All</a>
+</div>
 </div>
 </section>
 
@@ -38,6 +65,27 @@
 <h2>Shop Categories</h2>
 <p>Explore our latest collections.</p>
 <div class="category-grid" id="categoryGrid"></div>
+</section>
+
+<section class="products home-products" id="products">
+<div class="section-title-row">
+<div>
+<h2>Latest Products</h2>
+<p>All available pieces, updated from your admin panel.</p>
+</div>
+<a href="category.html" class="text-link">View All</a>
+</div>
+<div class="shop-toolbar home-product-toolbar" aria-label="Product search controls">
+<input type="search" id="homeProductSearch" placeholder="Search products">
+<select id="homeProductSort" aria-label="Sort products">
+<option value="newest">Newest</option>
+<option value="price-asc">Price: Low to High</option>
+<option value="price-desc">Price: High to Low</option>
+<option value="stock">Most Stock</option>
+</select>
+</div>
+<p class="product-count-note" id="homeProductCount"></p>
+<div class="product-container" id="homeProductGrid"></div>
 </section>
 
 <section class="features">
@@ -49,8 +97,15 @@
 </div>
 </section>
 
-<footer><p>&copy; 2026 Fashion Store</p></footer>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/script.js"></script>
+<footer class="site-footer">
+<p>&copy; 2026 Fashion Store</p>
+<nav class="footer-links" aria-label="Store policies">
+<a href="policies.html">Shipping, Returns & Privacy</a>
+<a href="support.html">Support</a>
+<a href="track.html">Track Order</a>
+</nav>
+</footer>
+<script src="assets/js/config.js?v=20260713-mobile-layer"></script>
+<script src="assets/js/script.js?v=20260713-mobile-layer"></script>
 </body>
 </html>

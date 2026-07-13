@@ -1,0 +1,3 @@
+﻿User-agent: *
+Allow: /
+Sitemap: https://fashionstoreilyass.netlify.app/sitemap.xml

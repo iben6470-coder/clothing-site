@@ -1,6 +1,6 @@
 # Fashion Store
 
-A small city-focused store website with a Node/SQLite backend, no client accounts, and an admin dashboard for managing products, categories, and orders.
+A small unisex city-focused store website with a Node/SQLite backend, no client accounts, and an admin dashboard for managing products, categories, and orders.
 
 ## Run
 
@@ -20,12 +20,7 @@ Admin page:
 http://localhost:3000/admin.html
 ```
 
-Admin login:
-
-```text
-username: admin
-password: admin123
-```
+Local admin login is loaded from your private `.env` file. Do not put the admin password in HTML, JS, CSS, or README.
 
 ## Admin Can Manage
 
@@ -92,7 +87,10 @@ GitHub Pages is static, so the real SQLite database must run on a Node host.
    - `DB_PATH=/data/clothing_site.db`
    - `UPLOAD_DIR=/data/uploads`
    - `ADMIN_USERNAME=admin`
-   - `ADMIN_PASSWORD=admin123`
+   - `ADMIN_PASSWORD=your-long-private-password`
+   - `ADMIN_SECRET=your-long-random-secret`
+   - `ALLOWED_ORIGINS=https://your-store-domain.com`
+   - `CARD_PAYMENT_URL=https://your-secure-card-payment-link`
 3. After deployment, copy the backend URL into `assets/js/config.js`:
 
 ```js
@@ -100,4 +98,18 @@ window.FASHION_API_BASE = "https://your-backend-url";
 window.FASHION_STORE_WHATSAPP = "212775089960";
 ```
 
-If `FASHION_API_BASE` is empty on GitHub Pages, the admin uses browser storage only.
+If `FASHION_API_BASE` is empty on a static host, admin/database features will not work. Use the Node backend for the real store.
+
+## Security Notes
+
+- Change the default local admin password before deployment.
+- Keep `ADMIN_PASSWORD` and `ADMIN_SECRET` only in the host environment variables.
+- Set `ALLOWED_ORIGINS` to your real website URL in production.
+- Admin sessions expire automatically; log in again after they expire.
+- Product/category uploads are limited to image files up to 5MB.
+## Card Payments
+
+- The site never stores card numbers.
+- Customers can choose `Bank card` at checkout.
+- Set `CARD_PAYMENT_URL` to your secure hosted payment page from your bank, CMI, Payzone, or another approved gateway.
+- If `CARD_PAYMENT_URL` is empty, the order is saved and WhatsApp opens so you can send the payment link manually.

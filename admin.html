@@ -7,20 +7,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=20260713-mobile-layer">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="admin-page">
 <header>
+<div class="mobile-left"><span class="menu-icon" onclick="toggleMenu()">Menu</span></div>
+<a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
 <nav id="navMenu">
 <a href="index.html">Home</a>
+<a href="men.html">Men</a>
+<a href="women.html">Women</a>
 <a href="index.html#shop">Shop</a>
 <a href="cart.html">Cart</a>
+<a href="track.html">Track Order</a>
 <a href="support.html">Support</a>
 <a href="admin.html">Admin</a>
 </nav>
-<a class="logo" href="index.html" aria-label="Fashion Store home">Fashion Store</a>
-<div class="header-icons"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
+<div class="mobile-right"><a href="cart.html" class="cart-icon"><i class="fa-solid fa-bag-shopping"></i><span id="cartCount">0</span></a></div>
 </header>
 
 <main class="admin-shell">
@@ -41,16 +45,32 @@
 <button type="button" class="secondary-btn" id="adminLogoutBtn">Logout</button>
 </div>
 
+<div class="admin-stats" id="adminStats" aria-label="Store overview"></div>
+
 <div class="admin-tabs" role="tablist" aria-label="Admin sections">
 <button class="admin-tab active" type="button" data-panel="ordersPanel" role="tab" aria-selected="true">Orders</button>
 <button class="admin-tab" type="button" data-panel="categoriesPanel" role="tab" aria-selected="false">Categories</button>
 <button class="admin-tab" type="button" data-panel="productsPanel" role="tab" aria-selected="false">Products</button>
+<button class="admin-tab" type="button" data-panel="reviewsPanel" role="tab" aria-selected="false">Comments</button>
+<button class="admin-tab" type="button" data-panel="toolsPanel" role="tab" aria-selected="false">Tools</button>
 </div>
 
 <div class="admin-panel active" id="ordersPanel">
 <div class="admin-list-panel admin-orders-panel">
 <h3>Orders</h3>
 <p class="admin-panel-note">New client orders appear here. Use Message Client to open WhatsApp with a ready confirmation text.</p>
+<form class="admin-form admin-edit-order" id="adminOrderEditForm" hidden>
+<input type="hidden" id="editOrderId">
+<label>Customer name<input type="text" id="editOrderName" required></label>
+<label>Phone<input type="text" id="editOrderPhone" required></label>
+<label>City<input type="text" id="editOrderCity" list="cityList" required></label>
+<datalist id="cityList"></datalist>
+<label>Delivery address<input type="text" id="editOrderAddress" required></label>
+<label>Notes<textarea id="editOrderNotes" placeholder="Delivery notes"></textarea></label>
+<label>Status<select id="editOrderStatus"></select></label>
+<div class="admin-inline-actions"><button type="submit">Save Order</button><button type="button" class="secondary-btn" id="cancelOrderEditBtn">Cancel</button></div>
+<p class="admin-status" id="adminOrderEditStatus"></p>
+</form>
 <div id="adminOrderList" class="admin-order-list"></div>
 </div>
 </div>
@@ -74,23 +94,56 @@
 <form class="admin-form" id="adminProductForm">
 <label>Product name<input type="text" id="productName" placeholder="Oversize Black Tee" required></label>
 <label>Category<select id="productCategory" required></select></label>
+<label>Page<select id="productAudience" required>
+<option value="unisex">Men + Women</option>
+<option value="men">Men only</option>
+<option value="women">Women only</option>
+</select></label>
 <label>Price MAD<input type="number" id="productPrice" placeholder="250" min="1" required></label>
-<label>Stock<input type="number" id="productStock" placeholder="10" min="0" value="0"></label>
+<label>Total stock fallback<input type="number" id="productStock" placeholder="10" min="0" value="0"></label>
+<label>Stock by size<input type="text" id="productStockBySize" placeholder="S:5, M:2, L:0"></label>
 <label>Sizes<input type="text" id="productSizes" placeholder="S, M, L, XL"></label>
 <label>Description<textarea id="productDescription" placeholder="Product details"></textarea></label>
-<label>Product picture<input type="file" id="productImage" accept="image/*" required></label>
-<img id="adminImagePreview" class="admin-preview" alt="Product preview" hidden>
+<label>Product pictures<input type="file" id="productImage" accept="image/*" multiple required></label>
+<div id="adminImagePreview" class="admin-preview-grid" hidden></div>
 <button type="submit">Add Product</button>
 <p class="admin-status" id="adminProductStatus"></p>
 </form>
 <div class="admin-list-panel"><h3>Products</h3><div id="adminProductList" class="admin-product-list"></div></div>
 </div>
 </div>
+
+<div class="admin-panel" id="reviewsPanel">
+<div class="admin-list-panel">
+<h3>Customer Comments</h3>
+<p class="admin-panel-note">Delete product comments or customer photos that you do not want to show in the store.</p>
+<div id="adminReviewList" class="admin-product-list"></div>
+</div>
+</div>
+<div class="admin-panel" id="toolsPanel">
+<div class="admin-list-panel">
+<h3>Store Tools</h3>
+<p class="admin-panel-note">Download backups and exports before big updates or deployment.</p>
+<div class="admin-tools-grid">
+<a href="/api/export/orders" data-admin-download="orders.csv">Export Orders CSV</a>
+<a href="/api/export/products" data-admin-download="products.csv">Export Products CSV</a>
+<a href="/api/admin/backup" data-admin-download="store-backup.json">Download JSON Backup</a>
+</div>
+<p class="admin-status" id="adminToolsStatus"></p>
+</div>
+</div>
 </section>
 </main>
 
-<footer><p>&copy; 2026 Fashion Store</p></footer>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/script.js"></script>
+<footer class="site-footer">
+<p>&copy; 2026 Fashion Store</p>
+<nav class="footer-links" aria-label="Store policies">
+<a href="policies.html">Shipping, Returns & Privacy</a>
+<a href="support.html">Support</a>
+<a href="track.html">Track Order</a>
+</nav>
+</footer>
+<script src="assets/js/config.js?v=20260713-mobile-layer"></script>
+<script src="assets/js/script.js?v=20260713-mobile-layer"></script>
 </body>
 </html>
