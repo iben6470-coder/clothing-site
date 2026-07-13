@@ -1,4 +1,4 @@
-﻿services:
+services:
   - type: web
     name: clothing-site-api
     env: node
@@ -15,7 +15,7 @@
       - key: ADMIN_SECRET
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://fashionstoreilyass.netlify.app
+        value: https://stellar-parfait-759959.netlify.app
       - key: DB_PATH
         value: /data/clothing_site.db
       - key: UPLOAD_DIR
