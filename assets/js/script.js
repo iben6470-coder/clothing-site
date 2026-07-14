@@ -1,4 +1,4 @@
-﻿let cart = JSON.parse(localStorage.getItem("cart")) || [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 let editingCategoryId = null;
 let editingProductId = null;
 let editingOrderId = null;
@@ -364,36 +364,61 @@ function apiErrorMessage(response, result, fallback){
   return result?.error || fallback;
 }
 
+function backendConnectionMessage(){
+  if(!API_BASE){ return "Backend is not connected. Start the Node server or set FASHION_API_BASE."; }
+  return `Backend is not connected yet (${API_BASE}). Deploy the Render backend first.`;
+}
+
 async function apiGet(url){
   if(USE_BROWSER_STORE){ return localGet(url); }
-  const response = await fetch(url, { headers:adminHeaders() });
-  const result = await response.json().catch(() => ({}));
-  if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not load store data.")); }
-  return result;
+  try{
+    const response = await fetch(url, { headers:adminHeaders() });
+    const result = await response.json().catch(() => ({}));
+    if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not load store data.")); }
+    return result;
+  }catch(error){
+    if(error instanceof TypeError){ throw new Error(backendConnectionMessage()); }
+    throw error;
+  }
 }
 
 async function apiPost(url, data){
   if(USE_BROWSER_STORE){ return localPost(url, data); }
-  const response = await fetch(url, { method:"POST", headers:adminHeaders({ "Content-Type":"application/json" }), body:JSON.stringify(data) });
-  const result = await response.json().catch(() => ({}));
-  if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not save.")); }
-  return result;
+  try{
+    const response = await fetch(url, { method:"POST", headers:adminHeaders({ "Content-Type":"application/json" }), body:JSON.stringify(data) });
+    const result = await response.json().catch(() => ({}));
+    if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not save.")); }
+    return result;
+  }catch(error){
+    if(error instanceof TypeError){ throw new Error(backendConnectionMessage()); }
+    throw error;
+  }
 }
 
 async function apiPatch(url, data){
   if(USE_BROWSER_STORE){ return localPatch(url, data); }
-  const response = await fetch(url, { method:"PATCH", headers:adminHeaders({ "Content-Type":"application/json" }), body:JSON.stringify(data) });
-  const result = await response.json().catch(() => ({}));
-  if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not update.")); }
-  return result;
+  try{
+    const response = await fetch(url, { method:"PATCH", headers:adminHeaders({ "Content-Type":"application/json" }), body:JSON.stringify(data) });
+    const result = await response.json().catch(() => ({}));
+    if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not update.")); }
+    return result;
+  }catch(error){
+    if(error instanceof TypeError){ throw new Error(backendConnectionMessage()); }
+    throw error;
+  }
 }
 
 async function apiDelete(url){
   if(USE_BROWSER_STORE){ return localDelete(url); }
-  const response = await fetch(url, { method:"DELETE", headers:adminHeaders() });
-  const result = await response.json().catch(() => ({}));
-  if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not delete.")); }
-  return result;
+  try{
+    const response = await fetch(url, { method:"DELETE", headers:adminHeaders() });
+    const result = await response.json().catch(() => ({}));
+    if(!response.ok){ throw new Error(apiErrorMessage(response, result, "Could not delete.")); }
+    return result;
+  }catch(error){
+    if(error instanceof TypeError){ throw new Error(backendConnectionMessage()); }
+    throw error;
+  }
 }
 
 function getNav(){ return document.getElementById("navMenu") || document.querySelector("nav"); }
