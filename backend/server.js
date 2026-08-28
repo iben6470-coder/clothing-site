@@ -36,10 +36,19 @@ const MAX_IMAGE_BYTES = Number(process.env.MAX_IMAGE_BYTES || 5 * 1024 * 1024);
 const CARD_PAYMENT_URL = String(process.env.CARD_PAYMENT_URL || "").trim();
 const ALLOWED_ORIGINS = new Set(String(process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500").split(",").map((item) => item.trim()).filter(Boolean));
 const ORDER_STATUSES = new Set(["pending", "confirmed", "preparing", "delivered", "cancelled"]);
+const PAYMENT_STATUSES = new Set(["unpaid", "pending_card_payment", "card_link_needed", "paid", "refunded"]);
 const PAYMENT_METHODS = new Set(["cash", "card"]);
 const PRODUCT_AUDIENCES = new Set(["unisex", "men", "women"]);
 const loginAttempts = new Map();
 const publicWriteAttempts = new Map();
+
+
+// Periodically purge expired rate-limit entries so the maps cannot grow without bound.
+setInterval(() => {
+  const now = Date.now();
+  for(const [key, entry] of loginAttempts){ if(entry.resetAt < now){ loginAttempts.delete(key); } }
+  for(const [key, entry] of publicWriteAttempts){ if(entry.resetAt < now){ publicWriteAttempts.delete(key); } }
+}, 60 * 60 * 1000).unref();
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -126,7 +135,13 @@ function verifyAdmin(req){
 }
 
 function clientIp(req){
-  return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "local").split(",")[0].trim();
+  const forwarded = String(req.headers["x-forwarded-for"] || "");
+  const parts = forwarded.split(",").map((item) => item.trim()).filter(Boolean);
+  // The LAST entry is the one appended by our own proxy (Render/Netlify) and is the
+  // only trustworthy hop. Earlier entries are client-controlled and spoofable, so
+  // using them would let attackers rotate their identity and bypass rate limits.
+  if(parts.length){ return parts[parts.length - 1]; }
+  return String(req.socket.remoteAddress || "local");
 }
 
 function loginBlocked(req){
@@ -437,6 +452,34 @@ function confirmationMessage(order){
   ].join("\n");
 }
 
+function restoreOrderStock(order){
+  return deductRestoreOrderStock(order, +1);
+}
+
+function deductOrderStock(order){
+  return deductRestoreOrderStock(order, -1);
+}
+
+async function deductRestoreOrderStock(order, direction){
+  for(const item of (order.items || [])){
+    const product = await get("SELECT id, stock, stock_by_size FROM products WHERE id = ?", [item.product_id]);
+    if(!product){ continue; }
+    const quantity = Number(item.quantity || 0);
+    const map = parseStockBySize(product.stock_by_size);
+    if(item.size && Object.keys(map).length){
+      const sizeKey = normalizeSize(item.size);
+      map[sizeKey] = Math.max(0, Number(map[sizeKey] || 0) + direction * quantity);
+      await run("UPDATE products SET stock_by_size = ?, stock = ? WHERE id = ?", [JSON.stringify(map), stockTotal(map, product.stock), product.id]);
+    }else{
+      await run(direction > 0
+        ? "UPDATE products SET stock = stock + ? WHERE id = ?"
+        : "UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?",
+        [quantity, product.id]);
+    }
+  }
+}
+
+
 async function handlePaymentConfig(req, res, url){
   if(req.method === "GET" && url.pathname === "/api/payment-config"){
     sendJson(req, res, 200, { cardEnabled:!!CARD_PAYMENT_URL });
@@ -585,8 +628,9 @@ async function handleProducts(req, res, url){
     if(audience === "men" || audience === "women"){ where += " AND LOWER(COALESCE(p.audience, 'unisex')) IN (?, 'unisex')"; params.push(audience); }
     else if(audience === "unisex"){ where += " AND LOWER(COALESCE(p.audience, 'unisex')) = ?"; params.push(audience); }
     if(search){
-      where += " AND (LOWER(p.name) LIKE ? OR LOWER(COALESCE(p.description, '')) LIKE ?)";
-      params.push(`%${search}%`, `%${search}%`);
+      const escaped = search.replace(/[\\%_]/g, (char) => `\\${char}`);
+      where += " AND (LOWER(p.name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(p.description, '')) LIKE ? ESCAPE '\\')";
+      params.push(`%${escaped}%`, `%${escaped}%`);
     }
 
     const orderBy = {
@@ -939,6 +983,11 @@ async function handleOrders(req, res, url){
     const id = url.pathname.split("/").pop();
     const existing = await get("SELECT * FROM orders WHERE id = ?", [id]);
     if(!existing){ sendJson(req, res, 404, { error:"Order not found" }); return true; }
+    if(existing.status !== "cancelled"){
+      // Cancelled orders already returned their stock; active ones get it back on delete.
+      const orderItems = await all("SELECT * FROM order_items WHERE order_id = ?", [id]);
+      await restoreOrderStock({ items:orderItems });
+    }
     await run("DELETE FROM order_items WHERE order_id = ?", [id]);
     await run("DELETE FROM orders WHERE id = ?", [id]);
     sendJson(req, res, 200, { ok:true });
@@ -959,11 +1008,25 @@ async function handleOrders(req, res, url){
     const customerCity = String(payload.customerCity || payload.customer_city || existing.customer_city || "").trim();
     const customerAddress = String(payload.customerAddress || payload.customer_address || existing.customer_address || "").trim();
     const customerNotes = String(payload.customerNotes ?? payload.customer_notes ?? existing.customer_notes ?? "").trim();
+    const paymentStatusProvided = payload.paymentStatus !== undefined || payload.payment_status !== undefined;
     const paymentStatus = String(payload.paymentStatus ?? payload.payment_status ?? existing.payment_status ?? "unpaid").trim();
+    if(paymentStatusProvided && !PAYMENT_STATUSES.has(paymentStatus)){
+      sendJson(req, res, 400, { error:"Invalid payment status" });
+      return true;
+    }
 
     if(!customerName || !customerPhone || !customerCity || !customerAddress){
       sendJson(req, res, 400, { error:"Name, phone, city, and address are required" });
       return true;
+    }
+
+    // Keep inventory consistent when an order moves in or out of "cancelled".
+    const wasCancelled = existing.status === "cancelled";
+    const nowCancelled = status === "cancelled";
+    if(nowCancelled !== wasCancelled){
+      const orderItems = await all("SELECT * FROM order_items WHERE order_id = ?", [id]);
+      if(nowCancelled){ await restoreOrderStock({ items:orderItems }); }
+      else{ await deductOrderStock({ items:orderItems }); }
     }
 
     await run(

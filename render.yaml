@@ -2,7 +2,9 @@ services:
   - type: web
     name: clothing-site-api
     env: node
-    plan: free
+    # NOTE: persistent disks are NOT available on the free plan. Starter is the
+    # cheapest plan that supports the disk below (SQLite DB + uploads survive redeploys).
+    plan: starter
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -26,4 +28,5 @@ services:
       name: clothing-site-data
       mountPath: /data
       sizeGB: 1
+
 
