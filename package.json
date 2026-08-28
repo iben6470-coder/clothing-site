@@ -3,9 +3,13 @@
     "start": "node backend/server.js",
     "check": "node --check backend/server.js && node --check assets/js/script.js",
     "db:check": "node tests/check-db.js",
-    "verify": "node tests/verify-fixes.js"
+    "verify": "node tests/verify-fixes.js",
+    "verify:pg": "node tests/verify-pg-dialect.js",
+    "migrate:supabase": "node scripts/migrate-to-supabase.js"
   },
   "dependencies": {
+    "pg": "^8.23.0",
+    "pg-mem": "^3.0.14",
     "sqlite3": "^6.0.1"
   }
 }

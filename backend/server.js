@@ -20,7 +20,7 @@ function loadLocalEnv(){
 
 loadLocalEnv();
 
-const { run, get, all, ready, DB_PATH } = require("./db");
+const { run, get, all, ready, DB_PATH, USE_POSTGRES } = require("./db");
 
 const PORT = process.env.PORT || 3000;
 const ROOT = path.join(__dirname, "..");
@@ -628,8 +628,9 @@ async function handleProducts(req, res, url){
     if(audience === "men" || audience === "women"){ where += " AND LOWER(COALESCE(p.audience, 'unisex')) IN (?, 'unisex')"; params.push(audience); }
     else if(audience === "unisex"){ where += " AND LOWER(COALESCE(p.audience, 'unisex')) = ?"; params.push(audience); }
     if(search){
-      const escaped = search.replace(/[\\%_]/g, (char) => `\\${char}`);
-      where += " AND (LOWER(p.name) LIKE ? ESCAPE '\\' OR LOWER(COALESCE(p.description, '')) LIKE ? ESCAPE '\\')";
+      // "!" is the escape character for LIKE wildcards (portable across SQLite and Postgres).
+      const escaped = search.replace(/[!%_]/g, (char) => `!${char}`);
+      where += " AND (LOWER(p.name) LIKE ? ESCAPE '!' OR LOWER(COALESCE(p.description, '')) LIKE ? ESCAPE '!')";
       params.push(`%${escaped}%`, `%${escaped}%`);
     }
 
@@ -1066,7 +1067,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Fashion Store running at http://localhost:${PORT}`);
-  console.log(`Database: ${DB_PATH}`);
+  console.log(`Database: ${USE_POSTGRES ? "PostgreSQL (Supabase)" : `SQLite (${DB_PATH})`}`);
   console.log(`Uploads: ${UPLOAD_DIR}`);
 });
 

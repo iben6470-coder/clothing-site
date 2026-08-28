@@ -78,9 +78,41 @@ Local admin login is loaded from your private `.env` file. Do not put the admin 
 - Uploaded category and product images are saved in storage/uploads and served from /uploads/...
 - Use http://localhost:3000, not double-clicked HTML files, when managing data.
 
-## Hosted Database Setup
+## Hosted Database Setup (Supabase)
 
-GitHub Pages is static, so the real SQLite database must run on a Node host.
+The store can use an online PostgreSQL database hosted on [Supabase](https://supabase.com) instead of the local SQLite file. The backend switches automatically: if `DATABASE_URL` is set it uses Supabase, otherwise it falls back to local SQLite.
+
+### 1. Create the Supabase project
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open the project dashboard and click **Connect**.
+3. Copy the **Session pooler** connection string (port 5432). It looks like:
+   `postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres`
+
+### 2. Connect the backend
+
+- **Locally:** paste the connection string into `.env` as `DATABASE_URL=...`, then run `npm start`. The tables are created automatically on first launch.
+- **On Render:** add a `DATABASE_URL` environment variable with the same value (it is already declared as `sync: false` in `render.yaml`).
+
+### 3. Migrate existing data
+
+Copy the current local SQLite data (categories, products, orders, reviews) into Supabase:
+
+```bash
+node scripts/migrate-to-supabase.js "postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
+```
+
+Row ids are preserved and sequences are reset, so the store continues exactly where the SQLite database left off.
+
+### Notes
+
+- Uploaded images still live on the server disk (`UPLOAD_DIR`); only store data moves to Supabase.
+- Supabase free-tier projects pause after ~7 days of inactivity - open the dashboard or use the site to keep it awake.
+- Local development without `DATABASE_URL` keeps working with SQLite, unchanged.
+
+## Legacy Hosted Database Setup
+
+GitHub Pages is static, so the real database must run on a Node host.
 
 1. Deploy this repository as a Node web service.
 2. Keep these environment variables on the backend host:
