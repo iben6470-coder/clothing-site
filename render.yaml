@@ -1,10 +1,10 @@
-﻿services:
+services:
   - type: web
     name: clothing-site-api
     env: node
-    # NOTE: persistent disks are NOT available on the free plan. Starter is the
-    # cheapest plan that supports the disk below (kept for uploaded images; store data lives in Supabase).
-    plan: starter
+    # Free plan works because store data lives in Supabase Postgres (DATABASE_URL)
+    # and uploaded images live in Supabase Storage (SUPABASE_URL / SUPABASE_SERVICE_KEY).
+    plan: free
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -16,22 +16,13 @@
         sync: false
       - key: ADMIN_SECRET
         sync: false
-      # Supabase Postgres connection string (from the Supabase dashboard:
-      # Connect -> Session pooler). When set, the backend uses Postgres;
-      # when empty it falls back to local SQLite on the disk.
       - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://stellar-parfait-759959.netlify.app
-      - key: DB_PATH
-        value: /data/clothing_site.db
-      - key: UPLOAD_DIR
-        value: /data/uploads
       - key: CARD_PAYMENT_URL
         sync: false
-    disk:
-      name: clothing-site-data
-      mountPath: /data
-      sizeGB: 1
-
-

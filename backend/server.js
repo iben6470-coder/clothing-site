@@ -34,6 +34,13 @@ const ADMIN_TOKEN_TTL_MS = Number(process.env.ADMIN_TOKEN_TTL_MS || 8 * 60 * 60 
 const MAX_BODY_BYTES = Number(process.env.MAX_BODY_BYTES || 20 * 1024 * 1024);
 const MAX_IMAGE_BYTES = Number(process.env.MAX_IMAGE_BYTES || 5 * 1024 * 1024);
 const CARD_PAYMENT_URL = String(process.env.CARD_PAYMENT_URL || "").trim();
+// Supabase Storage (free tier): when SUPABASE_URL + SUPABASE_SERVICE_KEY are set,
+// uploaded images go to a public storage bucket instead of the server disk. This
+// is required on hosts with an ephemeral filesystem (e.g. Render free plan).
+const SUPABASE_URL = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+const SUPABASE_SERVICE_KEY = String(process.env.SUPABASE_SERVICE_KEY || "").trim();
+const SUPABASE_STORAGE_BUCKET = String(process.env.SUPABASE_STORAGE_BUCKET || "store-uploads").trim();
+const USE_SUPABASE_STORAGE = !!(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 const ALLOWED_ORIGINS = new Set(String(process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5500,http://127.0.0.1:5500").split(",").map((item) => item.trim()).filter(Boolean));
 const ORDER_STATUSES = new Set(["pending", "confirmed", "preparing", "delivered", "cancelled"]);
 const PAYMENT_STATUSES = new Set(["unpaid", "pending_card_payment", "card_link_needed", "paid", "refunded"]);
@@ -209,7 +216,7 @@ async function readJson(req){
   catch(error){ throw new Error("Invalid JSON body"); }
 }
 
-function saveImage(dataUrl, prefix){
+async function saveImage(dataUrl, prefix){
   const match = /^data:(image\/(png|jpeg|jpg|webp|gif));base64,(.+)$/i.exec(dataUrl || "");
   if(!match){ throw new Error("Invalid image format"); }
 
@@ -217,13 +224,35 @@ function saveImage(dataUrl, prefix){
   if(imageBuffer.length > MAX_IMAGE_BYTES){ throw new Error("Image is too large. Maximum size is 5MB."); }
   const ext = match[2].toLowerCase() === "jpeg" ? "jpg" : match[2].toLowerCase();
   const filename = `${prefix}-${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
+
+  if(USE_SUPABASE_STORAGE){
+    const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${filename}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
+        "Content-Type": match[1].toLowerCase(),
+        "x-upsert": "true"
+      },
+      body: imageBuffer
+    });
+    if(!response.ok){
+      const detail = await response.text().catch(() => "");
+      throw new Error(`Could not upload image to storage (${response.status}) ${detail}`.trim());
+    }
+    return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/${filename}`;
+  }
+
   fs.writeFileSync(path.join(UPLOAD_DIR, filename), imageBuffer);
   return `uploads/${filename}`;
 }
 
-function saveImages(images, prefix){
+async function saveImages(images, prefix){
   if(!Array.isArray(images)){ return []; }
-  return images.filter(Boolean).map((image) => saveImage(image, prefix));
+  const saved = [];
+  for(const image of images.filter(Boolean)){
+    saved.push(await saveImage(image, prefix));
+  }
+  return saved;
 }
 
 function parseImageList(value, fallback = ""){
@@ -239,7 +268,11 @@ function parseImageList(value, fallback = ""){
 }
 
 function deleteUploadedImages(images){
-  parseImageList(images).forEach(deleteUploadedImage);
+  return (async () => {
+    for(const image of parseImageList(images)){
+      await deleteUploadedImage(image);
+    }
+  })();
 }
 
 function normalizeAudience(value){
@@ -272,8 +305,31 @@ function normalizeProduct(row){
   return product;
 }
 
-function deleteUploadedImage(image){
-  if(image && image.startsWith("uploads/")){
+async function deleteUploadedImage(image){
+  if(!image){ return; }
+
+  // Supabase Storage objects are stored as full public URLs in the database.
+  if(USE_SUPABASE_STORAGE && image.startsWith(`${SUPABASE_URL}/storage/v1/object/public/`)){
+    const marker = `/storage/v1/object/public/${SUPABASE_STORAGE_BUCKET}/`;
+    const objectPath = image.split(marker)[1];
+    if(objectPath){
+      try{
+        const response = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_STORAGE_BUCKET}/${objectPath}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}` }
+        });
+        if(!response.ok && response.status !== 404){
+          console.error(`Could not delete stored image (${response.status}): ${objectPath}`);
+        }
+      }catch(error){
+        console.error(`Could not delete stored image: ${error.message}`);
+      }
+    }
+    return;
+  }
+
+  // Legacy/local disk paths.
+  if(image.startsWith("uploads/")){
     const imagePath = path.join(UPLOAD_DIR, path.basename(image));
     if(fs.existsSync(imagePath)){ fs.unlinkSync(imagePath); }
   }
@@ -570,7 +626,7 @@ async function handleCategories(req, res, url){
     if(!name || !slug){ sendJson(req, res, 400, { error:"Category name is required" }); return true; }
     if(await get("SELECT id FROM categories WHERE slug = ?", [slug])){ sendJson(req, res, 409, { error:"Category slug already exists" }); return true; }
 
-    const image = payload.image ? saveImage(payload.image, "category") : "";
+    const image = payload.image ? await saveImage(payload.image, "category") : "";
     const result = await run("INSERT INTO categories (name, slug, description, image) VALUES (?, ?, ?, ?)", [name, slug, description, image]);
     sendJson(req, res, 201, await get("SELECT * FROM categories WHERE id = ?", [result.lastID]));
     return true;
@@ -589,7 +645,7 @@ async function handleCategories(req, res, url){
     const duplicate = await get("SELECT id FROM categories WHERE slug = ? AND id != ?", [slug, id]);
     if(duplicate){ sendJson(req, res, 409, { error:"Category slug already exists" }); return true; }
     let image = category.image || "";
-    if(payload.image){ deleteUploadedImage(image); image = saveImage(payload.image, "category"); }
+    if(payload.image){ await deleteUploadedImage(image); image = await saveImage(payload.image, "category"); }
     await run("UPDATE categories SET name = ?, slug = ?, description = ?, image = ? WHERE id = ?", [name, slug, description, image, id]);
     await run("UPDATE products SET category = ? WHERE category_id = ?", [slug, id]);
     sendJson(req, res, 200, await get("SELECT * FROM categories WHERE id = ?", [id]));
@@ -603,10 +659,10 @@ async function handleCategories(req, res, url){
     if(!category){ sendJson(req, res, 404, { error:"Category not found" }); return true; }
 
     const products = await all("SELECT image, images FROM products WHERE category_id = ?", [id]);
-    for(const product of products){ deleteUploadedImages(parseImageList(product.images, product.image)); }
+    for(const product of products){ await deleteUploadedImages(parseImageList(product.images, product.image)); }
     await run("DELETE FROM products WHERE category_id = ?", [id]);
     await run("DELETE FROM categories WHERE id = ?", [id]);
-    deleteUploadedImage(category.image);
+    await deleteUploadedImage(category.image);
     sendJson(req, res, 200, { ok:true });
     return true;
   }
@@ -693,7 +749,7 @@ async function handleProducts(req, res, url){
     const incomingImages = Array.isArray(payload.images) && payload.images.length ? payload.images : (payload.image ? [payload.image] : []);
     if(!incomingImages.length){ sendJson(req, res, 400, { error:"At least one product image is required" }); return true; }
 
-    const images = saveImages(incomingImages, "product");
+    const images = await saveImages(incomingImages, "product");
     const image = images[0] || "";
     const result = await run(
       "INSERT INTO products (name, category, category_id, price, description, image, images, sizes, stock_by_size, stock, audience) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -725,11 +781,11 @@ async function handleProducts(req, res, url){
     if(!category){ sendJson(req, res, 400, { error:"Category does not exist" }); return true; }
     let images = parseImageList(product.images, product.image);
     if(Array.isArray(payload.images) && payload.images.length){
-      deleteUploadedImages(images);
-      images = saveImages(payload.images, "product");
+      await deleteUploadedImages(images);
+      images = await saveImages(payload.images, "product");
     }else if(payload.image){
-      deleteUploadedImages(images);
-      images = saveImages([payload.image], "product");
+      await deleteUploadedImages(images);
+      images = await saveImages([payload.image], "product");
     }
     const image = images[0] || "";
     await run(
@@ -746,7 +802,7 @@ async function handleProducts(req, res, url){
     const product = await get("SELECT * FROM products WHERE id = ?", [id]);
     if(product){
       await run("DELETE FROM products WHERE id = ?", [id]);
-      deleteUploadedImages(parseImageList(product.images, product.image));
+      await deleteUploadedImages(parseImageList(product.images, product.image));
     }
     sendJson(req, res, 200, { ok:true });
     return true;
@@ -790,7 +846,7 @@ async function handleReviews(req, res, url){
     const review = await get("SELECT * FROM product_reviews WHERE id = ?", [id]);
     if(!review){ sendJson(req, res, 404, { error:"Comment not found" }); return true; }
     await run("DELETE FROM product_reviews WHERE id = ?", [id]);
-    if(review.image){ deleteUploadedImage(review.image); }
+    if(review.image){ await deleteUploadedImage(review.image); }
     sendJson(req, res, 200, { ok:true });
     return true;
   }
@@ -833,10 +889,10 @@ async function handleReviews(req, res, url){
       return true;
     }
     let image = "";
-    if(payload.image){ image = saveImage(payload.image, "review"); }
+    if(payload.image){ image = await saveImage(payload.image, "review"); }
     const existing = await get("SELECT * FROM product_reviews WHERE product_id = ? AND order_id = ? AND customer_phone = ?", [productId, orderId, order.customer_phone]);
     if(existing){
-      if(existing.image && image){ deleteUploadedImage(existing.image); }
+      if(existing.image && image){ await deleteUploadedImage(existing.image); }
       await run(
         "UPDATE product_reviews SET customer_name = ?, rating = ?, comment = ?, image = COALESCE(NULLIF(?, ''), image), is_approved = 0, created_at = CURRENT_TIMESTAMP WHERE id = ?",
         [order.customer_name, rating, comment, image, existing.id]
@@ -1065,9 +1121,36 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Fashion Store running at http://localhost:${PORT}`);
-  console.log(`Database: ${USE_POSTGRES ? "PostgreSQL (Supabase)" : `SQLite (${DB_PATH})`}`);
-  console.log(`Uploads: ${UPLOAD_DIR}`);
+async function ensureStorageBucket(){
+  if(!USE_SUPABASE_STORAGE){ return; }
+  try{
+    const check = await fetch(`${SUPABASE_URL}/storage/v1/bucket/${SUPABASE_STORAGE_BUCKET}`, {
+      headers: { "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}` }
+    });
+    if(check.ok){
+      console.log(`Supabase Storage bucket ready: ${SUPABASE_STORAGE_BUCKET}`);
+      return;
+    }
+    const create = await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: SUPABASE_STORAGE_BUCKET, public: true })
+    });
+    if(create.ok || create.status === 409){
+      console.log(`Supabase Storage bucket ready: ${SUPABASE_STORAGE_BUCKET}`);
+    }else{
+      console.error(`Could not create storage bucket (${create.status}): ${await create.text().catch(() => "")}`);
+    }
+  }catch(error){
+    console.error(`Storage bucket check failed: ${error.message}`);
+  }
+}
+
+ensureStorageBucket().catch(() => {}).finally(() => {
+  server.listen(PORT, () => {
+    console.log(`Fashion Store running at http://localhost:${PORT}`);
+    console.log(`Database: ${USE_POSTGRES ? "PostgreSQL (Supabase)" : `SQLite (${DB_PATH})`}`);
+    console.log(`Uploads: ${USE_SUPABASE_STORAGE ? `Supabase Storage (${SUPABASE_STORAGE_BUCKET})` : UPLOAD_DIR}`);
+  });
 });
 
