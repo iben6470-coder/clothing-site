@@ -23,6 +23,6 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://stellar-parfait-759959.netlify.app
+        value: https://clothing-site-fashion.netlify.app,http://localhost:3000,http://127.0.0.1:3000
       - key: CARD_PAYMENT_URL
         sync: false
