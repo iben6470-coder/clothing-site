@@ -56,5 +56,12 @@
 
 [[headers]]
   for = "/assets/*"
+  # JS/CSS config must revalidate so config/API-base changes reach browsers
+  # quickly. Content-hashed/immutable images are still safe to cache long-term.
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/assets/img/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
