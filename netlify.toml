@@ -1,5 +1,21 @@
 [build]
   publish = "netlify-deploy"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+  # sqlite3 is a native module used only in local dev (SQLite fallback). The
+  # deployed backend always runs in Postgres/Supabase mode, so we keep sqlite3
+  # (and pg-mem, used only by local tests) out of the function bundle.
+  external_node_modules = ["sqlite3", "pg-mem"]
+
+# API -> serverless function (same origin, no CORS). Netlify rewrites /api/* to the
+# deployed function at /.netlify/functions/api.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/admin"

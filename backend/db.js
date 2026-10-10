@@ -27,6 +27,38 @@ if(USE_POSTGRES){
     ssl: (!isLocalDb && !sslDisabled) ? { rejectUnauthorized: false } : undefined
   });
 
+  // Serverless hosts (e.g. Netlify Functions) can freeze a warm instance between
+  // requests, which silently drops the TCP connection to Postgres. Track the
+  // connection state and transparently reconnect + retry so a live request never
+  // fails just because the instance was idle.
+  let connected = false;
+  db.on("error", () => { connected = false; });
+
+  function isDisconnectError(error){
+    const message = String((error && error.message) || "");
+    return /Connection terminated|Connection ended|ECONNRESET|ECONNREFUSED|EPIPE|ETIMEDOUT|server closed the connection|Client has already been connected|Cannot use a client after/i.test(message);
+  }
+
+  async function ensureConnected(){
+    if(connected){ return; }
+    await db.connect();
+    await initializePostgres();
+    connected = true;
+  }
+
+  async function queryWithReconnect(text, params){
+    try{
+      await ensureConnected();
+      return await db.query(text, toPgValues(params));
+    }catch(error){
+      if(!isDisconnectError(error)){ throw error; }
+      connected = false;
+      try{ await db.end(); }catch(cleanupError){ /* already closed */ }
+      await ensureConnected();
+      return db.query(text, toPgValues(params));
+    }
+  }
+
   // Translate the few SQLite dialect bits used by server.js into Postgres SQL,
   // and convert SQLite-style "?" placeholders into Postgres "$n" placeholders.
   function toPostgresSql(query){
@@ -47,18 +79,18 @@ if(USE_POSTGRES){
     if(/^\s*INSERT\b/i.test(text) && !/\bRETURNING\b/i.test(text)){
       text += " RETURNING id";
     }
-    const result = await db.query(text, toPgValues(params));
+    const result = await queryWithReconnect(text, params);
     const lastID = result.rows && result.rows[0] && result.rows[0].id !== undefined ? Number(result.rows[0].id) : undefined;
     return { lastID, changes: result.rowCount || 0 };
   };
 
   get = async (query, params = []) => {
-    const result = await db.query(toPostgresSql(query), toPgValues(params));
+    const result = await queryWithReconnect(toPostgresSql(query), params);
     return result.rows[0] || undefined;
   };
 
   all = async (query, params = []) => {
-    const result = await db.query(toPostgresSql(query), toPgValues(params));
+    const result = await queryWithReconnect(toPostgresSql(query), params);
     return result.rows;
   };
 
@@ -161,13 +193,21 @@ if(USE_POSTGRES){
     );
   }
 
-  ready = (async () => {
-    await db.connect();
-    await initializePostgres();
-    console.log("Connected to PostgreSQL database (Supabase).");
-  })().catch((err) => {
-    console.error("PostgreSQL connection/initialization failed:", err.message);
-  });
+  // Lazy connection: connect on first request rather than at import time, so
+  // serverless cold starts and idle (frozen) warm instances work correctly.
+  let readyPromise = null;
+  ready = function(){
+    if(!readyPromise){
+      readyPromise = ensureConnected()
+        .then(() => { console.log("Connected to PostgreSQL database (Supabase)."); })
+        .catch((err) => {
+          console.error("PostgreSQL connection/initialization failed:", err.message);
+          readyPromise = null; // allow a retry on the next request
+          throw err;
+        });
+    }
+    return readyPromise;
+  };
 
 }else{
 

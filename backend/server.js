@@ -57,7 +57,11 @@ setInterval(() => {
   for(const [key, entry] of publicWriteAttempts){ if(entry.resetAt < now){ publicWriteAttempts.delete(key); } }
 }, 60 * 60 * 1000).unref();
 
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Ensure the local upload directory exists. On serverless hosts (e.g. Netlify
+// Functions) the filesystem is read-only, so failure here is non-fatal because
+// uploaded images are stored in Supabase Storage, not on disk.
+try{ fs.mkdirSync(UPLOAD_DIR, { recursive: true }); }
+catch(error){ console.warn(`Skipping local upload dir (${error.message}); using Supabase Storage.`); }
 
 if(!ADMIN_PASSWORD){
   console.error("SECURITY ERROR: set ADMIN_PASSWORD in .env or environment variables before opening the admin panel.");
@@ -1104,7 +1108,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  await ready;
+  await ready();
   const url = new URL(req.url, `http://${req.headers.host}`);
 
   try{
@@ -1146,11 +1150,23 @@ async function ensureStorageBucket(){
   }
 }
 
-ensureStorageBucket().catch(() => {}).finally(() => {
-  server.listen(PORT, () => {
-    console.log(`Fashion Store running at http://localhost:${PORT}`);
-    console.log(`Database: ${USE_POSTGRES ? "PostgreSQL (Supabase)" : `SQLite (${DB_PATH})`}`);
-    console.log(`Uploads: ${USE_SUPABASE_STORAGE ? `Supabase Storage (${SUPABASE_STORAGE_BUCKET})` : UPLOAD_DIR}`);
+// Only start a real HTTP listener when this file is executed directly (local dev
+// / Render / traditional Node host). When it is require()d as a Netlify Function
+// (netlify/functions/api.js), we must NOT listen on a port - the platform invokes
+// the exported request handler instead.
+if(require.main === module){
+  ensureStorageBucket().catch(() => {}).finally(() => {
+    server.listen(PORT, () => {
+      console.log(`Fashion Store running at http://localhost:${PORT}`);
+      console.log(`Database: ${USE_POSTGRES ? "PostgreSQL (Supabase)" : `SQLite (${DB_PATH})`}`);
+      console.log(`Uploads: ${USE_SUPABASE_STORAGE ? `Supabase Storage (${SUPABASE_STORAGE_BUCKET})` : UPLOAD_DIR}`);
+    });
   });
-});
+}
+
+// Export the raw request handler so the Netlify Function wrapper can adapt it with
+// serverless-http. Static file serving (serveStatic) is skipped on serverless
+// because the site is served directly by Netlify's CDN, not this function.
+module.exports = { handler: server.listeners("request")[0], server };
+
 
